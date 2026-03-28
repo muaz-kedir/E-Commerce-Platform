@@ -1,34 +1,67 @@
-import { ButtonHTMLAttributes, forwardRef } from "react";
-import { clamp } from "@/lib/utils";
+import { ButtonHTMLAttributes, forwardRef, ReactNode } from "react";
+import { clsx } from "clsx";
+import { Loader2 } from "lucide-react";
 
-type Variant = "primary" | "secondary" | "outline" | "ghost" | "danger";
-type Size = "sm" | "md" | "lg";
+// ─── Types ───────────────────────────────────────────────────────────────────
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "outline"
+  | "ghost"
+  | "danger"
+  | "danger-outline"
+  | "success";
 
-const variantStyles: Record<Variant, string> = {
-  primary:
-    "bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 focus-visible:outline-indigo-600",
-  secondary:
-    "bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:outline-gray-400",
-  outline:
-    "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus-visible:outline-gray-400",
-  ghost: "text-gray-700 hover:bg-gray-100 focus-visible:outline-gray-400",
-  danger:
-    "bg-red-600 text-white shadow-sm hover:bg-red-500 focus-visible:outline-red-600",
-};
+export type ButtonSize = "xs" | "sm" | "md" | "lg" | "xl";
 
-const sizeStyles: Record<Size, string> = {
-  sm: "px-3 py-1.5 text-xs rounded-lg",
-  md: "px-4 py-2.5 text-sm rounded-xl",
-  lg: "px-6 py-3 text-base rounded-xl",
-};
-
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: Variant;
-  size?: Size;
+export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: ButtonVariant;
+  size?: ButtonSize;
   isLoading?: boolean;
   fullWidth?: boolean;
+  /** Icon rendered before the label */
+  leftIcon?: ReactNode;
+  /** Icon rendered after the label */
+  rightIcon?: ReactNode;
+  /** Renders a square icon-only button — pass a single icon as children */
+  iconOnly?: boolean;
 }
 
+// ─── Styles ──────────────────────────────────────────────────────────────────
+const variantStyles: Record<ButtonVariant, string> = {
+  primary:
+    "bg-indigo-600 text-white shadow-sm hover:bg-indigo-500 active:bg-indigo-700 focus-visible:outline-indigo-600",
+  secondary:
+    "bg-gray-100 text-gray-900 hover:bg-gray-200 active:bg-gray-300 focus-visible:outline-gray-400",
+  outline:
+    "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 active:bg-gray-100 focus-visible:outline-gray-400",
+  ghost:
+    "text-gray-700 hover:bg-gray-100 active:bg-gray-200 focus-visible:outline-gray-400",
+  danger:
+    "bg-red-600 text-white shadow-sm hover:bg-red-500 active:bg-red-700 focus-visible:outline-red-600",
+  "danger-outline":
+    "border border-red-300 bg-white text-red-600 hover:bg-red-50 active:bg-red-100 focus-visible:outline-red-400",
+  success:
+    "bg-emerald-600 text-white shadow-sm hover:bg-emerald-500 active:bg-emerald-700 focus-visible:outline-emerald-600",
+};
+
+const sizeStyles: Record<ButtonSize, string> = {
+  xs: "h-7 px-2.5 text-xs gap-1 rounded-lg",
+  sm: "h-8 px-3 text-xs gap-1.5 rounded-lg",
+  md: "h-10 px-4 text-sm gap-2 rounded-xl",
+  lg: "h-11 px-5 text-sm gap-2 rounded-xl",
+  xl: "h-12 px-6 text-base gap-2.5 rounded-xl",
+};
+
+const iconOnlySizeStyles: Record<ButtonSize, string> = {
+  xs: "h-7 w-7 rounded-lg",
+  sm: "h-8 w-8 rounded-lg",
+  md: "h-10 w-10 rounded-xl",
+  lg: "h-11 w-11 rounded-xl",
+  xl: "h-12 w-12 rounded-xl",
+};
+
+// ─── Component ───────────────────────────────────────────────────────────────
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
@@ -36,55 +69,47 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       size = "md",
       isLoading = false,
       fullWidth = false,
+      leftIcon,
+      rightIcon,
+      iconOnly = false,
       disabled,
       children,
-      className = "",
+      className,
       ...props
     },
     ref
   ) => {
+    const isDisabled = disabled || isLoading;
+
     return (
       <button
         ref={ref}
-        disabled={disabled || isLoading}
-        className={[
-          "inline-flex items-center justify-center gap-2 font-semibold transition-colors",
+        disabled={isDisabled}
+        className={clsx(
+          // Base
+          "inline-flex items-center justify-center font-semibold",
+          "transition-all duration-150",
           "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2",
           "disabled:cursor-not-allowed disabled:opacity-50",
+          // Variant
           variantStyles[variant],
-          sizeStyles[size],
-          fullWidth ? "w-full" : "",
-          className,
-        ]
-          .filter(Boolean)
-          .join(" ")}
+          // Size
+          iconOnly ? iconOnlySizeStyles[size] : sizeStyles[size],
+          // Width
+          fullWidth && !iconOnly && "w-full",
+          className
+        )}
         {...props}
       >
-        {isLoading && (
-          <svg
-            className="h-4 w-4 animate-spin"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
-            />
-          </svg>
+        {isLoading ? (
+          <Loader2 className="animate-spin" size={size === "xs" || size === "sm" ? 14 : 16} />
+        ) : (
+          leftIcon
         )}
-        {children}
+        {!iconOnly && children}
+        {!isLoading && rightIcon}
       </button>
     );
   }
 );
-
 Button.displayName = "Button";
